@@ -6,7 +6,7 @@
     <title>Horror Maze Game</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: black; position: relative; }
+        body { margin: 0; overflow: hidden; background: black; position: relative; touch-action: manipulation; }
         #scareImage {
             position: fixed;
             top: 0;
@@ -19,39 +19,32 @@
         }
         .controls {
             position: fixed;
-            bottom: 20px;
+            bottom: 10px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 5px;
             z-index: 30;
         }
         .control-row {
             display: flex;
-            gap: 10px;
+            gap: 5px;
         }
         .control-button {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             background: white;
             border: none;
-            font-size: 24px;
+            font-size: 20px;
             text-align: center;
             border-radius: 10px;
             cursor: pointer;
             z-index: 30;
         }
-        canvas {
-            display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 10;
-        }
     </style>
-<audio id="scareSound" src="scare.mp3"></audio>
+    <audio id="scareSound" src="scare.mp3"></audio>
 </head>
 <body>
     <img id="scareImage" src="scary.jpg" alt="Scary Image">
@@ -65,15 +58,16 @@
     </div>
     <script>
         let cols = 10, rows = 10;
-        let cellSize = 40;
+        let cellSize;
         let player;
         let maze;
         let moveDir = { left: false, right: false, up: false, down: false };
 
         function setup() {
-            createCanvas(min(windowWidth, 400), min(windowHeight * 0.7, 400));
+            createCanvas(windowWidth, windowHeight * 0.8);
+            cellSize = min(width / cols, height / rows);
             maze = new Maze(cols, rows);
-            player = new Player(1, 1); 
+            player = new Player(1, 1);
         }
 
         function draw() {
@@ -134,8 +128,8 @@
             constructor(col, row) {
                 this.x = col * cellSize + cellSize / 2;
                 this.y = row * cellSize + cellSize / 2;
-                this.radius = 10;
-                this.speed = 2;
+                this.radius = cellSize / 3;
+                this.speed = cellSize / 10;
             }
 
             update() {
@@ -166,7 +160,7 @@
             fill(0, 0, 0, 255);
             rect(0, 0, width, height);
             erase();
-            ellipse(player.x, player.y, 200, 200);
+            ellipse(player.x, player.y, cellSize * 5, cellSize * 5);
             noErase();
         }
 
