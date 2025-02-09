@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horror Maze Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: black; position: relative; }
+        #scareImage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            display: none;
+            z-index: 20;
+        }
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            z-index: 30;
+        }
+        .control-row {
+            display: flex;
+            gap: 10px;
+        }
+        .control-button {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border: none;
+            font-size: 24px;
+            text-align: center;
+            border-radius: 10px;
+            cursor: pointer;
+            z-index: 30;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+    </style>
+<audio id="scareSound" src="scare.mp3"></audio>
+</head>
+<body>
+    <img id="scareImage" src="scary.jpg" alt="Scary Image">
+    <div class="controls">
+        <button class="control-button" id="up">▲</button>
+        <div class="control-row">
+            <button class="control-button" id="left">◄</button>
+            <button class="control-button" id="down">▼</button>
+            <button class="control-button" id="right">►</button>
+        </div>
+    </div>
+    <script>
+        let cols = 10, rows = 10;
+        let cellSize = 40;
+        let player;
+        let maze;
+        let moveDir = { left: false, right: false, up: false, down: false };
+
+        function setup() {
+            createCanvas(min(windowWidth, 400), min(windowHeight * 0.7, 400));
+            maze = new Maze(cols, rows);
+            player = new Player(1, 1); 
+        }
+
+        function draw() {
+            background(0);
+            maze.show();
+            player.update();
+            drawVisionMask();
+            player.show();
+        }
+
+        class Maze {
+            constructor(cols, rows) {
+                this.cols = cols;
+                this.rows = rows;
+                this.grid = this.generateMaze();
+            }
+
+            generateMaze() {
+                let grid = Array.from({ length: this.cols }, () => Array(this.rows).fill(1));
+                let stack = [[1, 1]];
+                grid[1][1] = 0;
+                
+                while (stack.length) {
+                    let [x, y] = stack[stack.length - 1];
+                    let neighbors = [
+                        [x + 2, y], [x - 2, y], [x, y + 2], [x, y - 2]
+                    ].filter(([nx, ny]) => nx > 0 && ny > 0 && nx < this.cols - 1 && ny < this.rows - 1 && grid[nx][ny] === 1);
+    
+                    if (neighbors.length) {
+                        let [nx, ny] = random(neighbors);
+                        grid[nx][ny] = 0;
+                        grid[(nx + x) / 2][(ny + y) / 2] = 0;
+                        stack.push([nx, ny]);
+                    } else {
+                        stack.pop();
+                    }
+                }
+                return grid;
+            }
+
+            show() {
+                fill(100);
+                for (let x = 0; x < this.cols; x++) {
+                    for (let y = 0; y < this.rows; y++) {
+                        if (this.grid[x][y] === 1) {
+                            rect(x * cellSize, y * cellSize, cellSize, cellSize);
+                        }
+                    }
+                }
+            }
+
+            isWall(x, y) {
+                return this.grid[x][y] === 1;
+            }
+        }
+
+        class Player {
+            constructor(col, row) {
+                this.x = col * cellSize + cellSize / 2;
+                this.y = row * cellSize + cellSize / 2;
+                this.radius = 10;
+                this.speed = 2;
+            }
+
+            update() {
+                let newX = this.x, newY = this.y;
+                if (moveDir.left) newX -= this.speed;
+                if (moveDir.right) newX += this.speed;
+                if (moveDir.up) newY -= this.speed;
+                if (moveDir.down) newY += this.speed;
+
+                let col = floor(newX / cellSize);
+                let row = floor(newY / cellSize);
+                
+                if (!maze.isWall(col, row)) {
+                    this.x = newX;
+                    this.y = newY;
+                } else {
+                    triggerScare();
+                }
+            }
+            
+            show() {
+                fill(255, 0, 0);
+                ellipse(this.x, this.y, this.radius * 2);
+            }
+        }
+
+        function drawVisionMask() {
+            fill(0, 0, 0, 255);
+            rect(0, 0, width, height);
+            erase();
+            ellipse(player.x, player.y, 200, 200);
+            noErase();
+        }
+
+        function triggerScare() {
+            document.getElementById('scareSound').play();
+            document.getElementById('scareImage').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('scareImage').style.display = 'none';
+            }, 2000);
+        }
+
+        document.querySelectorAll('.control-button').forEach(button => {
+            button.addEventListener("mousedown", () => moveDir[button.id] = true);
+            button.addEventListener("mouseup", () => moveDir[button.id] = false);
+            button.addEventListener("touchstart", (e) => { e.preventDefault(); moveDir[button.id] = true; });
+            button.addEventListener("touchend", (e) => { e.preventDefault(); moveDir[button.id] = false; });
+        });
+    </script>
+</body>
+</html>
